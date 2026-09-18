@@ -169,6 +169,6 @@ node tools/verify-icons.js       # 期望：全部图标校验通过
 
 ## 许可证
 
-[MIT](LICENSE) © 2026 CreatixChu
+[MIT](LICENSE) © 2026 LemonMars
 
 可自由使用、修改、分发、商用，只需保留版权声明与许可证原文。
