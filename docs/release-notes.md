@@ -6,7 +6,7 @@ New release → Release notes 框里即可。
 **Tag 规范**：`v主版本.次版本.修订号`，例如 `v1.0.0`、`v1.1.0`。
 Target 选 `main`，GitHub 会在发布时自动创建这个 tag。
 
-**附件命名**：`edge-split-translate-v1.0.0.zip`
+**附件命名**：`edge-split-translate-v1.1.0.zip`
 打包时只放扩展运行需要的文件（`manifest.json` 在压缩包**根目录**），
 不要带 `tools/`、`tests/`、`docs/`、`.gitignore` —— 商店审核也要求如此。
 
@@ -21,7 +21,7 @@ Target 选 `main`，GitHub 会在发布时自动创建这个 tag。
 
 **方式一：直接下载安装（推荐）**
 
-1. 下载下方附件 `edge-split-translate-v1.0.0.zip` 并解压到任意目录（解压后会得到一个包含
+1. 下载下方附件 `edge-split-translate-v1.1.0.zip` 并解压到任意目录（解压后会得到一个包含
    `manifest.json` 的文件夹）
 2. 打开 `edge://extensions/`（Chrome 是 `chrome://extensions/`）
 3. 打开左下角 **开发人员模式**
@@ -48,7 +48,9 @@ git clone https://github.com/LemonMars/edge-split-translate.git
 选好预设 → 填入 API Key → 点「测试连接」→ 看到「连接成功」→ 点「保存设置」。
 API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三方。
 
-## 本版功能
+## 本版功能（v1.1.0）
+
+详见 [CHANGELOG.md](../CHANGELOG.md)。
 
 **翻译**
 
@@ -108,13 +110,13 @@ API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三�
 
 | 字段 | 填写内容 |
 |---|---|
-| **Tag** | `v1.0.0`（保持 `Create new tag on publish` 状态） |
+| **Tag** | `v1.1.0`（保持 `Create new tag on publish` 状态） |
 | **Target** | `main` |
-| **Release title** | `v1.0.0` （或 `v1.0.0 · 分屏对照翻译首发`） |
+| **Release title** | `v1.1.0` （或 `v1.1.0 · 分屏对照翻译 + 四种版面 + 独立小窗`） |
 | **Release notes** | 上面模板正文 |
 | **Set as the latest release** | ✅ 勾上 |
 | **Set as a pre-release** | ⬜ 不勾（这是正式版） |
-| **Attach binaries** | 拖入 `edge-split-translate-v1.0.0.zip` |
+| **Attach binaries** | 拖入 `edge-split-translate-v1.1.0.zip` |
 
 > 「Generate release notes」按钮不用点 —— 那是给有多个历史 tag 的仓库自动生成
 > PR 列表用的，你这里只有首个版本，生成出来是空的或只有一条 commit 链接，
