@@ -1,0 +1,76 @@
+{
+  "manifest_version": 3,
+  "name": "分屏翻译 · Split Translate",
+  "version": "1.0.0",
+  "description": "自动检测非简体中文网页，一键左右分屏对照翻译（原文 / 简体中文），支持 DeepSeek、MiniMax 等任意 OpenAI 兼容接口。",
+  "default_locale": "zh_CN",
+  "minimum_chrome_version": "109",
+
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs",
+    "contextMenus",
+    "notifications"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_title": "分屏翻译",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "exclude_matches": [
+        "*://*/*.pdf",
+        "*://chrome.google.com/webstore/*",
+        "*://microsoftedge.microsoft.com/addons/*"
+      ],
+      "js": [
+        "lib/lang.js",
+        "lib/engine.js",
+        "content/content.js"
+      ],
+      "css": [
+        "content/content.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["content/content.css"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ]
+}

@@ -1,0 +1,469 @@
+/**
+ * content/content.css —— 分屏翻译注入样式
+ *
+ * 全部类名/变量都带 st- 前缀，避免污染原站点样式；
+ * 所有尺寸同时用 px 与 rem 无关的绝对值，避免被站点 font-size 影响。
+ */
+
+/* ============ 分屏容器 ============ */
+.split-translate-root {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  z-index: 2147483000 !important;
+  background: var(--st-bg, #fff) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  font-family: inherit;
+}
+
+/* 上下版面（原文在上 / 原文在下）：主轴改为纵向 */
+.split-translate-root[data-stt-layout="original-top"],
+.split-translate-root[data-stt-layout="original-bottom"] {
+  flex-direction: column !important;
+}
+/* 横向版面里两栏铺满高度，纵向版面里两栏铺满宽度 */
+.split-translate-root[data-stt-layout="original-top"] > .st-pane-original,
+.split-translate-root[data-stt-layout="original-top"] > .st-pane-translated,
+.split-translate-root[data-stt-layout="original-bottom"] > .st-pane-original,
+.split-translate-root[data-stt-layout="original-bottom"] > .st-pane-translated {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 左：原文
+ * 兜底规则：运行时由 content.js 在固定份额那一栏上写内联像素级 flex 值（见 applyRatio），
+ * 这里的百分比只是脚本未介入时的默认值。实测「简写 flex + var()」在部分
+ * Chromium 版本上不随变量变化重新解析，因此不要依赖它来动态调整比例。 */
+.split-translate-root .st-pane-original {
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: 50% !important;
+  width: 50% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  contain: paint;
+  background: var(--st-bg, #fff);
+  box-sizing: border-box !important;
+  position: relative;
+}
+
+/* 译文（镜像结构） */
+.split-translate-root .st-pane-translated {
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  flex-basis: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  contain: paint;
+  background: var(--st-bg, #fff);
+  box-sizing: border-box !important;
+  position: relative;
+}
+
+/* 独立小窗里的译文栏：不再受分屏约束，铺满窗口自己滚动 */
+.st-pane-translated.st-detached {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: auto !important;
+  contain: none;
+  position: static !important;
+}
+
+/* ============ 两栏角标（原文 / 译文） ============ */
+.st-pane-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  padding: 2px 9px;
+  border-radius: 0 0 8px 0;
+  background: rgba(15, 23, 42, .58);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 11px;
+  line-height: 18px;
+  letter-spacing: .5px;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  transition: opacity .25s;
+}
+.st-pane-badge.st-badge-dim { opacity: .28; }
+.st-pane-translated > .st-pane-badge {
+  background: rgba(59, 130, 246, .8);
+}
+
+/* ============ 悬停译文时高亮原文对应元素 ============ */
+.st-hover-origin {
+  outline: 2px solid rgba(59, 130, 246, .65) !important;
+  outline-offset: 1px;
+  border-radius: 3px;
+  background-color: rgba(59, 130, 246, .1) !important;
+}
+
+/* ============ 译文栏链接：明确可点 ============ */
+.st-clone-body a[href] {
+  cursor: pointer !important;
+}
+.st-clone-body a[href]:hover {
+  text-decoration: underline !important;
+}
+/* 表单控件在译文栏里是只读的，给出视觉提示 */
+.st-clone-body input[readonly],
+.st-clone-body textarea[readonly],
+.st-clone-body select {
+  cursor: not-allowed !important;
+  opacity: .85;
+}
+
+/* 右侧容器自身不继承原站 body 的宽度/边距限制 */
+.split-translate-root .st-clone-body {
+  margin: 0 !important;
+  padding: inherit;
+  min-height: 100%;
+  box-sizing: border-box !important;
+}
+
+/* ============ 中间分隔条 ============ */
+.st-divider {
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: 7px !important;
+  position: relative;
+  cursor: col-resize;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .05), rgba(0, 0, 0, .14), rgba(0, 0, 0, .05));
+  z-index: 10;
+  touch-action: none;
+  user-select: none;
+}
+/* 上下版面：分隔线变成水平条，渐变方向随之旋转 */
+.split-translate-root[data-stt-layout="original-top"] > .st-divider,
+.split-translate-root[data-stt-layout="original-bottom"] > .st-divider {
+  flex-basis: 7px !important;
+  height: 7px !important;
+  width: 100% !important;
+  cursor: row-resize;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .05), rgba(0, 0, 0, .14), rgba(0, 0, 0, .05));
+}
+.split-translate-root[data-stt-layout="original-top"] > .st-divider::after,
+.split-translate-root[data-stt-layout="original-bottom"] > .st-divider::after {
+  width: 46px;
+  height: 3px;
+  left: 50%;
+  top: 50%;
+  margin: -1.5px 0 0 -23px;
+}
+.st-divider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 46px;
+  margin: -23px 0 0 -1.5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .28);
+}
+.st-divider:hover, .st-divider.st-dragging {
+  background: rgba(59, 130, 246, .45);
+}
+.st-divider:hover::after, .st-divider.st-dragging::after {
+  background: #fff;
+}
+
+/* ============ 顶部提示条 ============ */
+.st-banner {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2147483600 !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #f8fafc;
+  background: rgba(17, 24, 39, .82);
+  backdrop-filter: saturate(160%) blur(10px);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .28);
+  animation: st-slide-down .22s ease-out;
+}
+@keyframes st-slide-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.st-banner .st-banner-icon {
+  flex: 0 0 auto;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  font-size: 13px;
+  font-weight: 700;
+}
+.st-banner .st-banner-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-banner .st-banner-text em {
+  font-style: normal;
+  font-weight: 600;
+  color: #93c5fd;
+}
+.st-banner .st-banner-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.st-banner button {
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  padding: 8px 14px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .15s, opacity .15s, transform .06s;
+  white-space: nowrap;
+}
+.st-banner button:active { transform: translateY(1px); }
+.st-banner button.st-primary {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  font-weight: 600;
+}
+.st-banner button.st-primary:hover { filter: brightness(1.1); }
+.st-banner button.st-ghost {
+  background: rgba(255, 255, 255, .12);
+  color: #e2e8f0;
+}
+.st-banner button.st-ghost:hover { background: rgba(255, 255, 255, .22); }
+.st-banner button[disabled] { opacity: .6; cursor: default; }
+
+/* ============ 右侧译文状态条 ============ */
+.st-statusbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+  color: #334155;
+  background: rgba(241, 245, 249, .95);
+  border-bottom: 1px solid rgba(15, 23, 42, .12);
+  backdrop-filter: blur(6px);
+}
+.st-statusbar .st-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22c55e;
+  flex: 0 0 auto;
+}
+.st-statusbar[data-status="translating"] .st-dot { background: #f59e0b; animation: st-pulse 1s infinite; }
+.st-statusbar[data-status="error"] .st-dot { background: #ef4444; }
+@keyframes st-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.st-statusbar .st-status-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-statusbar .st-status-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+.st-statusbar button {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(15, 23, 42, .16);
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+}
+.st-statusbar button:hover { background: #f1f5f9; }
+.st-statusbar .st-progress {
+  flex: 0 0 90px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(15, 23, 42, .12);
+  overflow: hidden;
+}
+.st-statusbar .st-progress i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #3b82f6, #22c55e);
+  transition: width .25s;
+}
+
+/* ============ 译文文本标记 ============ */
+[data-stt-id].st-done {
+  background: rgba(59, 130, 246, .07);
+  border-radius: 3px;
+}
+[data-stt-id].st-failed {
+  background: rgba(239, 68, 68, .12);
+  border-radius: 3px;
+}
+
+/* ============ 悬停查看原文 ============ */
+[data-stt-original] { position: relative; cursor: help; }
+[data-stt-original]:hover::after {
+  content: attr(data-stt-original);
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  z-index: 50;
+  max-width: 460px;
+  margin-bottom: 6px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: rgba(15, 23, 42, .95);
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: normal;
+  white-space: pre-wrap;
+  text-align: left;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .28);
+  pointer-events: none;
+}
+
+/* ============ 简洁阅读样式（可选） ============ */
+.st-reading {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif !important;
+}
+.st-reading * {
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  animation: none !important;
+  transition: none !important;
+  float: none !important;
+  position: static !important;
+  max-width: 100% !important;
+}
+.st-reading img,
+.st-reading video,
+.st-reading canvas,
+.st-reading svg,
+.st-reading iframe {
+  max-width: 100% !important;
+  height: auto !important;
+  opacity: .9;
+}
+.st-reading a { color: #2563eb !important; text-decoration: none !important; }
+.st-reading h1, .st-reading h2, .st-reading h3, .st-reading h4 {
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  margin: .8em 0 .4em !important;
+  color: #0f172a !important;
+}
+.st-reading p, .st-reading li, .st-reading td, .st-reading th, .st-reading div, .st-reading span {
+  font-size: inherit !important;
+  color: #1f2937 !important;
+  line-height: inherit !important;
+}
+.st-reading .st-pane-original,
+.st-reading .st-pane-translated {
+  padding: 18px 22px 60px !important;
+}
+.st-reading table { border-collapse: collapse !important; width: 100% !important; }
+.st-reading td, .st-reading th { border: 1px solid #e5e7eb !important; padding: 6px 8px !important; }
+
+/* ============ 图片取字结果卡片 ============ */
+.st-imgnote {
+  display: block;
+  margin: 6px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(59, 130, 246, .35);
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  background: rgba(239, 246, 255, .9);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #1e293b;
+  white-space: pre-wrap;
+}
+.st-imgnote .st-imgnote-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 11px;
+  vertical-align: 1px;
+}
+.st-imgnote details { margin-top: 6px; }
+.st-imgnote details summary {
+  cursor: pointer;
+  color: #2563eb;
+  font-size: 12px;
+  outline: none;
+}
+.st-imgnote details p {
+  margin: 6px 0 0;
+  color: #475569;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+.st-imgnote.st-imgnote-empty {
+  border-color: rgba(148, 163, 184, .5);
+  border-left-color: #94a3b8;
+  background: rgba(248, 250, 252, .9);
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* ============ 轻提示（Toast） ============ */
+.st-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%) translateY(12px);
+  z-index: 2147483600;
+  max-width: 70vw;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, .9);
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+}
+.st-toast.st-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.st-toast.st-error { background: rgba(153, 27, 27, .94); }

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Le renard et la forêt</title>
+  <style>
+    body { font-family: Georgia, serif; margin: 0; background: #fbfbf7; color: #222; }
+    header { background: #2f6f4f; color: #fff; padding: 18px 26px; }
+    main { max-width: 720px; margin: 0 auto; padding: 24px 26px 60px; }
+    h1 { font-size: 26px; margin: 0 0 6px; }
+    h2 { font-size: 19px; margin: 26px 0 8px; }
+    p { line-height: 1.7; margin: 0 0 14px; }
+    .card { border: 1px solid #dfe3dd; border-radius: 10px; padding: 14px 16px; background: #fff; }
+    .code { font-family: ui-monospace, Consolas, monospace; background: #f4f4f0; padding: 8px; border-radius: 6px; }
+    nav a { color: #fff; margin-right: 12px; text-decoration: none; }
+    footer { padding: 18px 26px; color: #777; font-size: 13px; }
+    .notranslate { color: #888; }
+  </style>
+</head>
+<body>
+  <header>
+    <nav><a href="/">Accueil</a><a href="/page">Articles</a><a href="/contact">Contact</a></nav>
+    <h1>Le renard brun rapide</h1>
+    <p>Un journal sur la forêt, les saisons et les animaux.</p>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Pourquoi la forêt est importante</h2>
+      <p>Le renard brun rapide saute par-dessus le chien paresseux. Cette phrase est un
+         exemple classique utilisé pour tester les polices de caractères et la détection
+         automatique de la langue dans les navigateurs modernes.</p>
+      <p>Les forêts couvrent environ un tiers de la surface terrestre. Elles abritent
+         une grande partie de la biodiversité et jouent un rôle essentiel dans la
+         régulation du climat.</p>
+    </div>
+
+    <h2>Petit lexique</h2>
+    <ul>
+      <li><strong>Forêt</strong> — un grand espace couvert d'arbres.</li>
+      <li><strong>Saison</strong> — une des quatre périodes de l'année.</li>
+      <li><strong>Animal</strong> — un être vivant qui n'est pas une plante.</li>
+    </ul>
+
+    <h2>Code à ne pas traduire</h2>
+    <pre class="code"><code>const foret = 42;
+console.log("ne pas traduire cette ligne");</code></pre>
+
+    <h2>Tableau</h2>
+    <table border="1" cellpadding="6">
+      <tr><th>Nom</th><th>Quantité</th></tr>
+      <tr><td>Chêne</td><td>120</td></tr>
+      <tr><td>Bouleau</td><td>85</td></tr>
+    </table>
+
+    <p class="notranslate" translate="no">Ce paragraphe marqué translate no ne doit pas être traduit.</p>
+    <p>Visitez <a href="https://example.com/">notre site partenaire</a> pour plus d'informations,
+       ou écrivez à <a href="mailto:contact@example.com">contact@example.com</a>.</p>
+    <p>Le prix est de 1 250,00 € et la surface de 3 400 m².</p>
+    <p id="dynamic-host"></p>
+  </main>
+  <footer>© 2024 Journal de la forêt — Tous droits réservés.</footer>
+  <script>
+    // 动态内容：用于验证 MutationObserver 路径（默认设置下不自动翻译，仅保证不报错）
+    window.__addDynamic = function () {
+      const host = document.getElementById('dynamic-host');
+      const p = document.createElement('p');
+      p.textContent = "Un paragraphe ajouté dynamiquement par le script de la page.";
+      host.appendChild(p);
+      return p.textContent;
+    };
+  </script>
+</body>
+</html>

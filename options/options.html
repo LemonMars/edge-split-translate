@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>分屏翻译 · 设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">译</span>
+      <div>
+        <h1>分屏翻译 · 设置</h1>
+        <p class="sub">非简体中文网页 → 左原文 / 右译文的对照分屏翻译</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button id="btnTest" class="btn btn-ghost">测试连接</button>
+      <button id="btnSave" class="btn btn-primary">保存设置</button>
+    </div>
+  </header>
+
+  <div id="toast" class="toast"></div>
+
+  <main class="content">
+
+    <!-- ============ 1. 翻译服务 ============ -->
+    <section class="card">
+      <h2>1. 翻译服务商</h2>
+      <p class="desc">
+        所有服务商均通过 <code>OpenAI 兼容</code> 的
+        <code>POST {Base URL}/chat/completions</code> 调用，切换服务商只是换 Base URL + 模型名。
+      </p>
+
+      <div class="field">
+        <label for="provider">服务商预设</label>
+        <div class="control-row">
+          <select id="provider"></select>
+          <a id="providerDoc" class="doc-link" href="#" target="_blank" rel="noopener">获取 API Key ↗</a>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="baseURL">Base URL</label>
+        <input id="baseURL" type="text" spellcheck="false" placeholder="https://api.deepseek.com/v1">
+        <span class="hint">不要带 <code>/chat/completions</code>，扩展会自动补全；也可直接粘贴完整地址。</span>
+      </div>
+
+      <div class="field">
+        <label for="apiKey">API Key</label>
+        <div class="control-row">
+          <input id="apiKey" type="password" spellcheck="false" autocomplete="off" placeholder="sk-xxxxxxxx">
+          <button id="btnToggleKey" class="btn btn-mini" type="button">显示</button>
+        </div>
+        <span class="hint">密钥仅保存在本机 <code>chrome.storage.local</code>，不会上传到任何第三方。</span>
+      </div>
+
+      <div class="field">
+        <label for="model">模型名称</label>
+        <div class="control-row">
+          <input id="model" type="text" spellcheck="false" list="modelList" placeholder="deepseek-chat">
+          <datalist id="modelList"></datalist>
+          <button id="btnModels" class="btn btn-mini" type="button">拉取列表</button>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="field">
+          <label for="temperature">温度 (0~2)</label>
+          <input id="temperature" type="number" min="0" max="2" step="0.1" value="0.2">
+        </div>
+        <div class="field">
+          <label for="batchSize">每批段数</label>
+          <input id="batchSize" type="number" min="1" max="50" step="1" value="12">
+        </div>
+        <div class="field">
+          <label for="batchChars">每批字符上限</label>
+          <input id="batchChars" type="number" min="500" max="20000" step="100" value="5000">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="reasoningEffort">思考强度（推理强度）</label>
+        <select id="reasoningEffort">
+          <option value="">关闭 / 不发送该参数（默认，最快最省）</option>
+          <option value="low">低（low）</option>
+          <option value="medium">中（medium）</option>
+          <option value="high">高（high）</option>
+        </select>
+        <span class="hint">
+          会以 <code>reasoning_effort</code> 字段发送。DeepSeek 的
+          <code>deepseek-chat</code> / <code>deepseek-reasoner</code>、OpenAI o 系列等支持；
+          MiniMax 的推理模型、以及大部分第三方模型不认识这个字段，若接口返回 400，
+          扩展会自动去掉该参数重试一次，不会因此翻译失败。翻译任务本身不需要长思考，
+          建议保持「关闭」。
+        </span>
+      </div>
+
+      <div id="testResult" class="test-result hidden"></div>
+    </section>
+
+    <!-- ============ 2. 自动化 ============ -->
+    <section class="card">
+      <h2>2. 自动化程度</h2>
+      <div class="field">
+        <label for="autoMode">检测到非简体中文页面时</label>
+        <select id="autoMode">
+          <option value="smart">智能提示 —— 顶部显示提示条，点击后翻译（默认）</option>
+          <option value="auto">完全自动 —— 直接分屏翻译，不询问</option>
+          <option value="manual">仅手动 —— 只响应工具栏按钮 / 右键菜单</option>
+          <option value="off">关闭扩展 —— 不检测、不提示</option>
+        </select>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="minConfidence">自动触发的最低置信度</label>
+          <input id="minConfidence" type="number" min="0" max="1" step="0.05" value="0.5">
+        </div>
+        <div class="field">
+          <label for="targetLang">目标语言</label>
+          <select id="targetLang">
+            <option value="zh-CN">简体中文（默认）</option>
+            <option value="zh-TW">繁体中文</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="excludeList">排除名单（每行一个关键词，命中 URL 即跳过）</label>
+        <textarea id="excludeList" rows="4" spellcheck="false"></textarea>
+      </div>
+
+      <label class="switch-line">
+        <input id="autoTranslateDynamic" type="checkbox">
+        <span>自动翻译页面动态加载的新内容（无限滚动、懒加载等）</span>
+      </label>
+    </section>
+
+    <!-- ============ 3. 分屏界面 ============ -->
+    <section class="card">
+      <h2>3. 分屏界面与版面</h2>
+
+      <div class="field">
+        <label for="layout">分屏版面（原文放在哪一侧）</label>
+        <select id="layout">
+          <option value="original-left">原文在左，译文在右（默认）</option>
+          <option value="original-right">原文在右，译文在左</option>
+          <option value="original-top">原文在上，译文在下</option>
+          <option value="original-bottom">原文在下，译文在上</option>
+        </select>
+        <span class="hint">
+          上下版面时分隔线变成横向可拖动；无论哪种版面，比例都指「原文栏占多少」，
+          拖动分隔线、或在弹窗里拉比例条都能调整，双击分隔线回到 50 : 50。
+        </span>
+      </div>
+
+      <label class="switch-line">
+        <input id="showPaneBadge" type="checkbox">
+        <span>在两栏左上角显示「原文 / 译文」角标（滚动后自动淡出）</span>
+      </label>
+      <label class="switch-line">
+        <input id="highlightOriginal" type="checkbox">
+        <span>鼠标悬停译文时，高亮原文栏里对应的那一段</span>
+      </label>
+      <label class="switch-line">
+        <input id="detachWindow" type="checkbox">
+        <span>翻译完成后自动把译文放进「独立小窗」（默认关闭；也可随时点状态条的「独立小窗」按钮）</span>
+      </label>
+      <p class="desc" style="margin:6px 0 14px">
+        独立小窗基于 Document Picture-in-Picture：译文是实时搬过去的，
+        关掉小窗会自动搬回分屏位置。浏览器不支持该能力时会降级成普通小窗快照。
+        译文栏里的链接可以直接点：站内链接在当前标签页打开，站外链接自动新开标签页（按住 Ctrl / 中键也可强制新开）。
+      </p>
+
+      <label class="switch-line">
+        <input id="showBanner" type="checkbox">
+        <span>在页面顶部显示提示条（关闭后只能从工具栏手动触发）</span>
+      </label>
+      <label class="switch-line">
+        <input id="showDivider" type="checkbox">
+        <span>显示可拖动的中间分隔线</span>
+      </label>
+      <label class="switch-line">
+        <input id="syncScroll" type="checkbox">
+        <span>两栏滚动同步</span>
+      </label>
+      <label class="switch-line">
+        <input id="showStatusBar" type="checkbox">
+        <span>在译文栏顶部显示翻译状态条与进度</span>
+      </label>
+      <label class="switch-line">
+        <input id="showOriginalOnHover" type="checkbox">
+        <span>鼠标悬停译文时显示对应原文（气泡提示）</span>
+      </label>
+      <label class="switch-line">
+        <input id="readingStyle" type="checkbox">
+        <span>译文栏使用「简洁阅读样式」（去掉原站复杂样式，仅保留排版）</span>
+      </label>
+
+      <div class="grid-3">
+        <div class="field">
+          <label for="defaultRatio">默认分屏比例（原文栏 %）</label>
+          <input id="defaultRatio" type="number" min="20" max="80" step="1" value="50">
+        </div>
+        <div class="field">
+          <label for="fontSize">译文基础字号 (px)</label>
+          <input id="fontSize" type="number" min="12" max="24" step="1" value="15">
+        </div>
+        <div class="field">
+          <label for="lineHeight">译文行高倍数</label>
+          <input id="lineHeight" type="number" min="1.2" max="2.4" step="0.05" value="1.7">
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4. 全语言识别 API ============ -->
+    <section class="card">
+      <h2>4. 全语言识别 API（可选 · 图片取字）</h2>
+      <p class="desc">
+        对于正文以图片呈现的页面（海报、截图、漫画、图表），扩展会在配置了本项后调用多模态模型
+        （同样走 OpenAI 兼容接口）先识别文字、再翻译，并在右栏以卡片形式展示。
+        未配置时自动降级：右栏对图片区域给出占位提示。
+      </p>
+
+      <label class="switch-line">
+        <input id="ocrEnabled" type="checkbox">
+        <span>启用全语言识别 API</span>
+      </label>
+
+      <div class="field">
+        <label for="ocrBaseURL">识别接口 Base URL</label>
+        <input id="ocrBaseURL" type="text" spellcheck="false" placeholder="https://api.siliconflow.cn/v1">
+      </div>
+      <div class="field">
+        <label for="ocrApiKey">识别接口 API Key（留空则复用上面的 Key）</label>
+        <input id="ocrApiKey" type="password" spellcheck="false" autocomplete="off" placeholder="可留空">
+      </div>
+      <div class="field">
+        <label for="ocrModel">识别模型名称</label>
+        <input id="ocrModel" type="text" spellcheck="false" placeholder="Qwen/Qwen2.5-VL-7B-Instruct">
+      </div>
+      <div class="field">
+        <label for="ocrPrompt">识别提示词</label>
+        <textarea id="ocrPrompt" rows="3" spellcheck="false"></textarea>
+      </div>
+
+      <div class="control-row">
+        <button id="btnTestVision" class="btn btn-ghost" type="button">测试识别接口</button>
+      </div>
+      <div id="visionResult" class="test-result hidden"></div>
+    </section>
+
+    <!-- ============ 5. 缓存与数据 ============ -->
+    <section class="card">
+      <h2>5. 缓存与数据</h2>
+      <p class="desc">
+        已翻译的文本会按「服务商 + 模型 + 目标语言」做哈希缓存，命中后不再请求接口，节省额度。
+      </p>
+      <div class="control-row wrap">
+        <button id="btnCacheStats" class="btn btn-ghost" type="button">查看缓存用量</button>
+        <button id="btnCacheClear" class="btn btn-danger" type="button">清空翻译缓存</button>
+        <button id="btnExport" class="btn btn-ghost" type="button">导出设置</button>
+        <button id="btnImport" class="btn btn-ghost" type="button">导入设置</button>
+        <input id="importFile" type="file" accept="application/json" class="hidden">
+      </div>
+      <div id="cacheResult" class="test-result hidden"></div>
+    </section>
+
+    <!-- ============ 6. 使用说明 ============ -->
+    <section class="card">
+      <h2>6. 使用说明</h2>
+      <ol class="steps">
+        <li>在上面选好服务商并填入 API Key，点右上角「测试连接」确认可用，然后「保存设置」。</li>
+        <li>打开任意外语网页，页面顶部会出现提示条，点「翻译」即进入分屏对照。</li>
+        <li>
+          <strong>译文栏的链接可以直接点</strong>：站内链接在当前标签页打开，
+          站外链接自动新开标签页；按住 <code>Ctrl</code> 或中键点击可强制新开标签页。
+          页内锚点（<code>#xxx</code>）会让原文栏滚动到对应位置。
+        </li>
+        <li>想换版面：弹窗里点「原文在上 / 在左 / 在右 / 在下」四个按钮之一，或在本页第 3 节下拉框选择。</li>
+        <li>拖动中间分隔线调整比例（双击回到 50 : 50）；悬停译文可看原文并高亮原文对应段落。</li>
+        <li>需要边看边做别的事时，点译文栏状态条上的「独立小窗」，把译文放进可拖动的小窗口。</li>
+        <li>想全自动：把「自动化程度」改成「完全自动」。</li>
+        <li>浏览器内置页面（<code>edge://</code>、扩展商店等）无法注入脚本，属正常限制。</li>
+      </ol>
+      <p class="desc">
+        已知限制：跨域 iframe 内部无法注入（对应位置会显示占位提示）；
+        <code>&lt;canvas&gt;</code> / WebGL 渲染的文字无法提取；
+        正文为图片的页面需要配置第 4 节的多模态识别接口；
+        「独立小窗」依赖 Document Picture-in-Picture（Edge / Chrome 116+），
+        不支持的浏览器会降级为普通小窗快照。
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footbar">
+    <button id="btnReset" class="btn btn-danger-ghost">恢复默认设置</button>
+    <button id="btnSave2" class="btn btn-primary">保存设置</button>
+  </footer>
+</div>
+
+<script src="../lib/lang.js"></script>
+<script src="../lib/engine.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

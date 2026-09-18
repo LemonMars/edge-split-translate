@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>分屏翻译</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 头部：当前服务商 -->
+    <header class="head">
+      <div class="brand">
+        <span class="logo">译</span>
+        <div class="brand-text">
+          <strong>分屏翻译</strong>
+          <span id="provider" class="sub">读取中…</span>
+        </div>
+      </div>
+      <button id="btnOptions" class="icon-btn" title="打开设置">⚙</button>
+    </header>
+
+    <!-- 页面信息 -->
+    <section class="card page">
+      <div class="row">
+        <span class="label">页面语言</span>
+        <span id="lang" class="value">检测中…</span>
+      </div>
+      <div class="row">
+        <span class="label">当前状态</span>
+        <span id="status" class="value">未翻译</span>
+      </div>
+      <div id="progressWrap" class="progress hidden"><i id="progress"></i></div>
+      <div id="error" class="error hidden"></div>
+    </section>
+
+    <!-- 主操作 -->
+    <section class="actions">
+      <button id="btnMain" class="btn btn-primary">
+        <span id="btnMainText">开始分屏翻译</span>
+      </button>
+      <div class="sub-actions">
+        <button id="btnRestore" class="btn btn-ghost" disabled>恢复原页面</button>
+        <button id="btnRetranslate" class="btn btn-ghost" disabled>重新翻译</button>
+      </div>
+    </section>
+
+    <!-- 分屏设置 -->
+    <section class="card">
+      <div class="row">
+        <span class="label">原文位置</span>
+        <span id="layoutText" class="value">左侧</span>
+      </div>
+      <div class="layout-grid" id="layoutGrid">
+        <button type="button" class="layout-btn" data-layout="original-top" title="原文在上，译文在下">
+          <span class="lb-box"><i class="lb-orig"></i><i class="lb-trans"></i></span>原文在上
+        </button>
+        <button type="button" class="layout-btn" data-layout="original-left" title="原文在左，译文在右">
+          <span class="lb-box lb-row"><i class="lb-orig"></i><i class="lb-trans"></i></span>原文在左
+        </button>
+        <button type="button" class="layout-btn" data-layout="original-right" title="原文在右，译文在左">
+          <span class="lb-box lb-row"><i class="lb-trans"></i><i class="lb-orig"></i></span>原文在右
+        </button>
+        <button type="button" class="layout-btn" data-layout="original-bottom" title="原文在下，译文在上">
+          <span class="lb-box"><i class="lb-trans"></i><i class="lb-orig"></i></span>原文在下
+        </button>
+      </div>
+      <div class="row">
+        <span class="label">分屏比例</span>
+        <span id="ratioText" class="value">50 : 50</span>
+      </div>
+      <input id="ratio" type="range" min="20" max="80" step="1" value="50">
+      <div class="hint">左右拖动分隔线也能调整；双击分隔线恢复 50 : 50。</div>
+      <div class="sub-actions">
+        <button id="btnDetach" class="btn btn-ghost">独立小窗</button>
+      </div>
+      <div id="detachHint" class="hint hidden">把译文放进可拖动的小窗口；再点一次收回来。</div>
+    </section>
+
+    <!-- 快捷开关 -->
+    <section class="card">
+      <div class="row">
+        <span class="label">自动化程度</span>
+        <select id="autoMode">
+          <option value="smart">智能提示（默认）</option>
+          <option value="auto">完全自动翻译</option>
+          <option value="manual">仅手动触发</option>
+          <option value="off">关闭扩展</option>
+        </select>
+      </div>
+      <label class="row switch-row">
+        <span class="label">右侧简洁阅读样式</span>
+        <input id="readingStyle" type="checkbox" class="switch">
+      </label>
+      <label class="row switch-row">
+        <span class="label">启用全语言识别 API</span>
+        <input id="ocrEnabled" type="checkbox" class="switch">
+      </label>
+      <div id="ocrHint" class="hint hidden">需在设置页填写识别接口的 Base URL 与模型名。</div>
+    </section>
+
+    <footer class="foot">
+      <span id="tip">快捷键：右键页面 → 分屏翻译此页面</span>
+    </footer>
+  </div>
+
+  <script src="../lib/lang.js"></script>
+  <script src="../lib/engine.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
