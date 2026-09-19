@@ -1,21 +1,4 @@
-# Release Notes 模板
-
-发布新版本时，把下面模板里的占位内容替换掉，粘到 GitHub 的
-New release → Release notes 框里即可。
-
-**Tag 规范**：`v主版本.次版本.修订号`，例如 `v1.0.0`、`v1.1.0`、`v1.1.1`。
-Target 选 `main`，GitHub 会在发布时自动创建这个 tag。
-
-**附件命名**：`edge-split-translate-v1.1.1.zip`
-打包时只放扩展运行需要的文件（`manifest.json` 在压缩包**根目录**），
-不要带 `tools/`、`tests/`、`docs/`、`.gitignore` —— 商店审核也要求如此。
-
----
-
-## 模板正文（复制以下全部）
-
-````markdown
-> 自动检测非简体中文网页，把页面分成左右两栏对照阅读：**一侧原文、一侧简体中文**。
+﻿> 自动检测非简体中文网页，把页面分成左右两栏对照阅读：**一侧原文、一侧简体中文**。
 
 ## 安装
 
@@ -120,22 +103,3 @@ API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三�
 
 遇到问题请提 [Issue](https://github.com/LemonMars/edge-split-translate/issues)，
 附上浏览器版本、出错页面和扩展设置页的「测试连接」结果。
-````
-
----
-
-## 其它字段怎么填
-
-| 字段 | 填写内容 |
-|---|---|
-| **Tag** | `v1.1.1`（保持 `Create new tag on publish` 状态） |
-| **Target** | `main` |
-| **Release title** | `v1.1.1 · 修复部分网站被识别为错误语言` |
-| **Release notes** | 上面模板正文 |
-| **Set as the latest release** | ✅ 勾上 |
-| **Set as a pre-release** | ⬜ 不勾（这是正式版） |
-| **Attach binaries** | 拖入 `edge-split-translate-v1.1.1.zip` |
-
-> 「Generate release notes」按钮不用点 —— 那是给有多个历史 tag 的仓库自动生成
-> PR 列表用的，你这里只有首个版本，生成出来是空的或只有一条 commit 链接，
-> 不如直接用上面的手写说明。
