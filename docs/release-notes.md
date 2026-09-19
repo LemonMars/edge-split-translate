@@ -3,10 +3,10 @@
 发布新版本时，把下面模板里的占位内容替换掉，粘到 GitHub 的
 New release → Release notes 框里即可。
 
-**Tag 规范**：`v主版本.次版本.修订号`，例如 `v1.0.0`、`v1.1.0`。
+**Tag 规范**：`v主版本.次版本.修订号`，例如 `v1.0.0`、`v1.1.0`、`v1.1.1`。
 Target 选 `main`，GitHub 会在发布时自动创建这个 tag。
 
-**附件命名**：`edge-split-translate-v1.1.0.zip`
+**附件命名**：`edge-split-translate-v1.1.1.zip`
 打包时只放扩展运行需要的文件（`manifest.json` 在压缩包**根目录**），
 不要带 `tools/`、`tests/`、`docs/`、`.gitignore` —— 商店审核也要求如此。
 
@@ -21,7 +21,7 @@ Target 选 `main`，GitHub 会在发布时自动创建这个 tag。
 
 **方式一：直接下载安装（推荐）**
 
-1. 下载下方附件 `edge-split-translate-v1.1.0.zip` 并解压到任意目录（解压后会得到一个包含
+1. 下载下方附件 `edge-split-translate-v1.1.1.zip` 并解压到任意目录（解压后会得到一个包含
    `manifest.json` 的文件夹）
 2. 打开 `edge://extensions/`（Chrome 是 `chrome://extensions/`）
 3. 打开左下角 **开发人员模式**
@@ -48,9 +48,27 @@ git clone https://github.com/LemonMars/edge-split-translate.git
 选好预设 → 填入 API Key → 点「测试连接」→ 看到「连接成功」→ 点「保存设置」。
 API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三方。
 
-## 本版功能（v1.1.0）
+## 本版修复（v1.1.1）
 
-详见 [CHANGELOG.md](../CHANGELOG.md)。
+**中文站点混排少量韩文时被整页判成韩语**
+
+例如 NVIDIA 中文站：页头的语言 / 地区选择器里有「한국어」，旧版会把整个页面判成韩语并弹出
+翻译提示条。根因是三处叠加，均已修复：
+
+1. 旧版只抽取正文**前 4000 字符**做判断，采样正好落在页头语言选择器上就会误判。
+   现在改为遍历**整页所有可提取文字**做全量文字系统统计
+2. 旧版用「谚文出现 ≥ 4 次就判韩语」这类阈值。现在改为比较汉字 / 假名 / 谚文的
+   **相对占比**，中文页面里偶发的朝鲜语选项不再能翻转结论
+3. 旧版 `shouldTranslate()` 完全无视网页声明的 `<html lang>`。现在声明与整页统计
+   交叉验证，声明简体中文且页面确实以汉字为主时直接跳过
+
+**新增：语言识别方式设置**（设置页 → 自动化程度）
+
+- `local`（默认）—— 只用本地统计，零成本零延迟
+- `local-api` —— 本地判不准（置信度低 / 与网页声明冲突）时才调用一次 AI 兜底
+- `api` —— 总是用 AI 识别
+
+## 功能总览
 
 **翻译**
 
@@ -58,7 +76,7 @@ API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三�
   土耳其语、波兰语、俄语、阿拉伯语、希腊语、泰语、日语、韩语、繁体中文等；简体中文页面自动跳过
 - 保留原页面：原文栏使用页面原始 DOM，原站 CSS 完全生效，布局 / 字体 / 表格 / 图片位置不变
 - 只翻译该翻译的：自动跳过代码块、命令行、URL、邮箱、纯数字、`translate="no"` 区域
-- 批量请求 + 本地缓存：多段合并成一次请求，相同内容只请求一次，二次访问同一页面几乎零请求
+- 批量请求 + 本地缓存：多段合并成一次请求，相同内容只请求一次，二次访问几乎零请求
 
 **交互**
 
@@ -82,8 +100,8 @@ API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三�
 
 | 命令 | 结果 |
 |---|---|
-| `node tools/self-test.js` | **140 项通过，0 项失败** |
-| `node tests/e2e.js` | **131 项通过，0 项失败**（无头 Edge + CDP 驱动真实浏览器） |
+| `node tools/self-test.js` | **170 项通过，0 项失败** |
+| `node tests/e2e.js` | **139 项通过，0 项失败**（无头 Edge + CDP 驱动真实浏览器） |
 | `node tools/verify-icons.js` | 图标解码自检通过 |
 
 端到端测试覆盖完整用户路径：法文页面 → 顶部提示条 → 点击翻译 → 分屏 → 调用 OpenAI 兼容接口
@@ -110,13 +128,13 @@ API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三�
 
 | 字段 | 填写内容 |
 |---|---|
-| **Tag** | `v1.1.0`（保持 `Create new tag on publish` 状态） |
+| **Tag** | `v1.1.1`（保持 `Create new tag on publish` 状态） |
 | **Target** | `main` |
-| **Release title** | `v1.1.0` （或 `v1.1.0 · 分屏对照翻译 + 四种版面 + 独立小窗`） |
+| **Release title** | `v1.1.1 · 修复中文站被误判为韩语` |
 | **Release notes** | 上面模板正文 |
 | **Set as the latest release** | ✅ 勾上 |
 | **Set as a pre-release** | ⬜ 不勾（这是正式版） |
-| **Attach binaries** | 拖入 `edge-split-translate-v1.1.0.zip` |
+| **Attach binaries** | 拖入 `edge-split-translate-v1.1.1.zip` |
 
 > 「Generate release notes」按钮不用点 —— 那是给有多个历史 tag 的仓库自动生成
 > PR 列表用的，你这里只有首个版本，生成出来是空的或只有一条 commit 链接，
