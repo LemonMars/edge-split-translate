@@ -130,7 +130,7 @@ API Key 只保存在本机 `chrome.storage.local`，不会上传到任何第三�
 |---|---|
 | **Tag** | `v1.1.1`（保持 `Create new tag on publish` 状态） |
 | **Target** | `main` |
-| **Release title** | `v1.1.1 · 修复中文站被误判为韩语` |
+| **Release title** | `v1.1.1 · 修复部分网站被识别为错误语言` |
 | **Release notes** | 上面模板正文 |
 | **Set as the latest release** | ✅ 勾上 |
 | **Set as a pre-release** | ⬜ 不勾（这是正式版） |
