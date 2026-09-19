@@ -241,6 +241,70 @@ check('思考强度 auto 也归为不发送',
   Engine.normalizeSettings({ reasoningEffort: 'auto' }).reasoningEffort === '');
 
 /* ================================================================== */
+console.log('\n[3.5] 语言误判回归（NVIDIA 中文站被判成韩语）');
+/* ================================================================== */
+
+const dom = (c) => Lang.dominantScript(c);
+check('中文正文 + 少量韩文选项 → 判中文',
+  dom({ han: 800, hangul: 30, kana: 0, latin: 50 }).code === 'zh',
+  JSON.stringify(dom({ han: 800, hangul: 30, kana: 0, latin: 50 })));
+check('真韩文页面（谚文远多于汉字）→ 判韩语',
+  dom({ han: 20, hangul: 500 }).code === 'ko', JSON.stringify(dom({ han: 20, hangul: 500 })));
+check('纯韩文页面 → 判韩语',
+  dom({ han: 0, hangul: 300 }).code === 'ko', JSON.stringify(dom({ han: 0, hangul: 300 })));
+check('谚文略多于汉字 → 判韩语',
+  dom({ han: 100, hangul: 120 }).code === 'ko', JSON.stringify(dom({ han: 100, hangul: 120 })));
+check('日文（假名 + 汉字）→ 判日语',
+  dom({ han: 100, kana: 200 }).code === 'ja', JSON.stringify(dom({ han: 100, kana: 200 })));
+check('纯中文 → 判中文', dom({ han: 400 }).code === 'zh');
+check('纯英文 → 判英语', dom({ latin: 400 }).code === 'en');
+check('空统计 → 返回 null', dom({}) === null);
+
+check('声明简体中文 + 大量汉字 → 不冲突',
+  Lang.declarationConflicts({ declared: 'zh_Hans', hanCount: 800, hangulCount: 30, kanaCount: 0, script: 'han' }) === false);
+check('声明简体中文但页面几乎没有汉字 → 冲突，不采信声明',
+  Lang.declarationConflicts({ declared: 'zh_Hans', hanCount: 2, hangulCount: 0, script: 'latin' }) === true);
+check('声明韩语但谚文极少 → 冲突',
+  Lang.declarationConflicts({ declared: 'ko', hanCount: 500, hangulCount: 0, script: 'han' }) === true);
+check('声明日语但既无假名也无汉字 → 冲突',
+  Lang.declarationConflicts({ declared: 'ja', hanCount: 0, kanaCount: 0, script: 'latin' }) === true);
+
+check('shouldTranslate：声明简体中文且统计支持 → 不翻译（该误判的直接后果）',
+  Lang.shouldTranslate({
+    code: 'ko', declared: 'zh_Hans', hanCount: 800, hangulCount: 30, kanaCount: 0,
+    isChinese: false, isSimplifiedChinese: false
+  }) === false);
+check('shouldTranslate：声明简体中文但统计不支持 → 按检测结果翻译',
+  Lang.shouldTranslate({
+    code: 'en', declared: 'zh_Hans', hanCount: 2, hangulCount: 0, kanaCount: 0,
+    isChinese: false, isSimplifiedChinese: false
+  }) === true);
+check('shouldTranslate：韩文页面 → 翻译',
+  Lang.shouldTranslate({ code: 'ko', declared: 'ko', hanCount: 20, hangulCount: 500, isSimplifiedChinese: false }) === true);
+check('shouldTranslate：繁体中文页面 → 翻译',
+  Lang.shouldTranslate({ code: 'zh_Hant', declared: 'zh-Hant', hanCount: 500, isSimplifiedChinese: false }) === true);
+check('shouldTranslate：无声明英文页面 → 翻译',
+  Lang.shouldTranslate({ code: 'en', declared: '', isSimplifiedChinese: false }) === true);
+
+check('languageDetect 默认 local', Engine.normalizeSettings({}).languageDetect === 'local');
+check('languageDetect 接受 local-api',
+  Engine.normalizeSettings({ languageDetect: 'local-api' }).languageDetect === 'local-api');
+check('languageDetect 接受 api', Engine.normalizeSettings({ languageDetect: 'api' }).languageDetect === 'api');
+check('languageDetect 非法值回退 local',
+  Engine.normalizeSettings({ languageDetect: 'magic' }).languageDetect === 'local');
+
+const normCode = Engine.normalizeDetectedCode;
+check('归一化 "zh-CN" → zh_Hans', normCode('zh-CN') === 'zh_Hans', normCode('zh-CN'));
+check('归一化 "zh-TW" → zh_Hant', normCode('zh-TW') === 'zh_Hant', normCode('zh-TW'));
+check('归一化 "ZH_cn" → zh_Hans', normCode('ZH_cn') === 'zh_Hans', normCode('ZH_cn'));
+check('归一化 "简体中文" → zh_Hans', normCode('简体中文') === 'zh_Hans', normCode('简体中文'));
+check('归一化 "繁体中文" → zh_Hant', normCode('繁体中文') === 'zh_Hant', normCode('繁体中文'));
+check('归一化 "韩语" → ko', normCode('韩语') === 'ko', normCode('韩语'));
+check('归一化 "en" → en', normCode('en') === 'en');
+check('归一化 "ko-KR" → ko', normCode('ko-KR') === 'ko', normCode('ko-KR'));
+check('归一化空输入 → 空串', normCode('') === '');
+
+/* ================================================================== */
 console.log('\n[4] 前端页面引用检查');
 /* ================================================================== */
 

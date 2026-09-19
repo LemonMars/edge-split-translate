@@ -15,6 +15,7 @@ const FIELDS = {
   batchSize: 'int',
   batchChars: 'int',
   targetLang: 'string',
+  languageDetect: 'string',
   autoMode: 'string',
   minConfidence: 'float',
   excludeList: 'string',

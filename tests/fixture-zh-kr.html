@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <title>最新驱动程序下载 | 回归测试页</title>
+  <meta http-equiv="content-language" content="zh-Hans">
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; margin: 0; background: #1a1a1a; color: #fff; }
+    header { padding: 16px 24px; background: #000; display: flex; align-items: center; gap: 20px; }
+    nav a { color: #ccc; margin-right: 16px; text-decoration: none; }
+    main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 20px; margin-top: 26px; }
+    p { line-height: 1.8; color: #ddd; }
+    select, .card { background: #262626; color: #fff; border: 1px solid #444; border-radius: 6px; padding: 8px; }
+    .card { display: block; margin: 10px 0; }
+    .lang-bar { padding: 8px 24px; background: #111; font-size: 13px; }
+    .lang-bar a { color: #9cf; margin-right: 14px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>NVIDIA</strong>
+    <nav>
+      <a href="/">主页</a>
+      <a href="/drivers">驱动程序</a>
+      <a href="/news">新闻</a>
+    </nav>
+    <!-- 关键：这里混入大量韩文，复现旧版把整页判成韩语的问题 -->
+    <select id="region" aria-label="地区选择">
+      <option>한국어</option>
+      <option>日本語</option>
+      <option>简体中文</option>
+      <option>English</option>
+      <option>Français</option>
+      <option>Deutsch</option>
+      <option>Español</option>
+    </select>
+    <select id="lang" aria-label="语言选择">
+      <option>한국어 (Korean)</option>
+      <option>简体中文 (Chinese Simplified)</option>
+      <option>English (US)</option>
+    </select>
+  </header>
+
+  <!-- 真实站点常见的「可见语言链接」形式，同样是误判来源 -->
+  <div class="lang-bar">
+    <a href="/kr">한국어</a>
+    <a href="/jp">日本語</a>
+    <a href="/cn">简体中文</a>
+    <a href="/en">English</a>
+  </div>
+
+  <main>
+    <h1>最新驱动程序下载</h1>
+    <p>无论您是玩热门新游戏还是使用全新的创意应用程序，NVIDIA 驱动程序都为其定制以提供更佳体验。
+       如果您是游戏玩家，希望在新游戏、新补丁和游戏追加下载内容发布时获得 Game Ready 驱动程序，
+       请下载并安装最新的驱动程序。</p>
+
+    <h2>GeForce Game Ready 驱动</h2>
+    <div class="card">最适合：游戏玩家。针对最新游戏大作提供首发日优化，包含性能提升与错误修复。</div>
+
+    <h2>NVIDIA Studio 驱动</h2>
+    <div class="card">最适合：创作者。为视频编辑、三维渲染、图形设计等创意工作流提供稳定性与性能保障。</div>
+
+    <h2>手动驱动搜索</h2>
+    <p>按产品、产品类型或系列搜索，选择您的显卡型号与操作系统版本，即可找到匹配的驱动程序。</p>
+
+    <h2>新闻和推荐</h2>
+    <p>RTX 助力游戏开发者呈现原生创意，借助深度学习超级采样技术提供逼真的光照和材质效果。</p>
+    <p>学长推荐 RTX 50 系笔记本电脑，配备专属 AI 技术，助力学生在学习、创作、开发和游戏方面的效率
+       远超普通笔记本电脑。</p>
+    <p>无论您是玩热门新游戏还是使用全新的创意应用程序，我们都会持续更新驱动程序以提供更好的体验。</p>
+  </main>
+</body>
+</html>

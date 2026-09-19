@@ -98,9 +98,9 @@ function findEdge() {
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 /** 复制一份被测扩展；Edge 内容校验器会拒绝 tests/、tools/，故剥掉 */
-function prepareExtension() {
-  fs.rmSync(EXT_DIR, { recursive: true, force: true });
-  fs.mkdirSync(EXT_DIR, { recursive: true });
+function prepareExtension(extDir) {
+  fs.rmSync(extDir, { recursive: true, force: true });
+  fs.mkdirSync(extDir, { recursive: true });
   const skip = new Set(['node_modules', '.git', 'tools', 'tests']);
   (function copy(src, dst) {
     fs.mkdirSync(dst, { recursive: true });
@@ -111,8 +111,8 @@ function prepareExtension() {
       if (entry.isDirectory()) copy(s, d);
       else fs.copyFileSync(s, d);
     }
-  })(ROOT, EXT_DIR);
-  return EXT_DIR;
+  })(ROOT, extDir);
+  return extDir;
 }
 
 /* ------------------------------------------------------------------ */
@@ -130,6 +130,11 @@ const ARTICLE_PAGE = [
   'inside the translated pane. This page should also get auto translated.</p>',
   '</body></html>'
 ].join('\n');
+
+/** 语言误判回归页：中文正文 + 页头韩文地区/语言选项（复现「NVIDIA 中文站被判成韩语」） */
+const ZH_KR_PAGE = fs.readFileSync(path.join(__dirname, 'fixture-zh-kr.html'), 'utf8');
+/** 对照页：真韩文页面，应当仍然被判成韩语并触发翻译 */
+const KO_PAGE = fs.readFileSync(path.join(__dirname, 'fixture-ko.html'), 'utf8');
 
 function startMockServer() {
   const received = [];
@@ -187,6 +192,14 @@ function startMockServer() {
     if (p === '/news/article-1') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(ARTICLE_PAGE);
+    }
+    if (p === '/zh-with-korean-options') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(ZH_KR_PAGE);
+    }
+    if (p === '/korean') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(KO_PAGE);
     }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(FRENCH_PAGE);
@@ -435,9 +448,18 @@ async function main() {
   console.log('浏览器：' + edge);
 
   console.log('\n[0] 准备');
-  fs.rmSync(TMP, { recursive: true, force: true });
-  prepareExtension();
-  check('已生成被测扩展副本（剥离 tools/ 与 tests/）', fs.existsSync(path.join(EXT_DIR, 'manifest.json')));
+  // 上一次运行残留的 Edge 进程可能锁住临时目录，删除失败时退回到一个唯一目录
+  let tmpRoot = TMP;
+  try {
+    fs.rmSync(tmpRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 });
+  } catch (err) {
+    tmpRoot = TMP + '-' + Date.now().toString(36);
+    console.log('  · 上一个临时目录被占用（' + err.code + '），改用 ' + tmpRoot);
+  }
+  const extDir = path.join(tmpRoot, 'ext');
+  const profileDir = path.join(tmpRoot, 'profile');
+  prepareExtension(extDir);
+  check('已生成被测扩展副本（剥离 tools/ 与 tests/）', fs.existsSync(path.join(extDir, 'manifest.json')));
   const server = await startMockServer();
   check('mock OpenAI 接口已监听 127.0.0.1:' + PORT, true);
 
@@ -448,9 +470,9 @@ async function main() {
     '--no-first-run', '--no-default-browser-check',
     '--disable-features=Translate,msEdgeTranslate',
     '--remote-debugging-port=0',
-    '--user-data-dir=' + PROFILE_DIR,
-    '--disable-extensions-except=' + EXT_DIR,
-    '--load-extension=' + EXT_DIR,
+    '--user-data-dir=' + profileDir,
+    '--disable-extensions-except=' + extDir,
+    '--load-extension=' + extDir,
     '--window-size=1280,900',
     pageUrl
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -460,7 +482,7 @@ async function main() {
 
   let cdp = null;
   try {
-    const port = await waitForDevToolsPort(PROFILE_DIR, 45000);
+    const port = await waitForDevToolsPort(profileDir, 45000);
     console.log('  调试端口：' + port);
     cdp = await CDP.connect(port);
     check('已连接 CDP', true);
@@ -1126,6 +1148,73 @@ async function main() {
       '(() => ({ split: !!document.querySelector(".split-translate-root"), banner: !!document.querySelector(".st-banner") }))()');
     check('命中排除名单时不自动分屏', excluded.split === false, JSON.stringify(excluded));
     check('命中排除名单时不显示提示条', excluded.banner === false, JSON.stringify(excluded));
+
+    /* ============================================================ */
+    console.log('\n[10.5] 语言误判回归（中文站混韩文选项 → 不应弹提示条）');
+    /* ============================================================ */
+
+    // 用 smart 模式：检测通过就不该出现提示条（auto 模式会直接分屏，掩盖问题）
+    await seedSettings(cdp, sessionId,
+      Object.assign({}, BASE_SETTINGS, { autoMode: 'smart', languageDetect: 'local' }));
+
+    const zhKrUrl = 'http://127.0.0.1:' + PORT + '/zh-with-korean-options';
+    await cdp.navigate(sessionId, 'about:blank');
+    await sleep(400);
+    await cdp.navigate(sessionId, zhKrUrl);
+    await sleep(3500);
+
+    const zhCase = await cdp.evaluate(sessionId, [
+      'new Promise((resolve) => {',
+      '  chrome.runtime.sendMessage({ type: "TAB_ACTION", action: "DETECT_AGAIN" }, (resp) => {',
+      '    const d = (resp && resp.result && resp.result.detection) || {};',
+      '    setTimeout(() => resolve({',
+      '      code: d.code, name: d.name, declared: d.declared, source: d.source,',
+      '      han: d.hanCount, hangul: d.hangulCount, kana: d.kanaCount,',
+      '      sampleChars: d.sampleChars, agrees: d.declarationAgrees,',
+      '      hasBanner: !!document.querySelector(".st-banner"),',
+      '      hasSplit: !!document.querySelector(".split-translate-root")',
+      '    }), 900);',
+      '  });',
+      '})'
+    ].join('\n'));
+
+    check('中文站混韩文选项：整页统计到大量汉字', (zhCase.han || 0) > 100,
+      'han=' + zhCase.han + ' hangul=' + zhCase.hangul + ' kana=' + zhCase.kana);
+    check('中文站混韩文选项：也被统计到了少量谚文（正是旧的误判来源）',
+      (zhCase.hangul || 0) > 0, 'hangul=' + zhCase.hangul);
+    check('中文站混韩文选项：最终判定为简体中文，不再判成韩语',
+      zhCase.code === 'zh_Hans', 'code=' + zhCase.code + ' name=' + zhCase.name);
+    check('中文站混韩文选项：识别到网页声明 lang=zh-Hans 并与之交叉验证',
+      zhCase.declared === 'zh_Hans' && zhCase.agrees === true,
+      'declared=' + zhCase.declared + ' agrees=' + zhCase.agrees);
+    check('中文站混韩文选项：不弹翻译提示条（该 bug 的直接表现）',
+      zhCase.hasBanner === false, 'hasBanner=' + zhCase.hasBanner);
+    check('中文站混韩文选项：不自动分屏', zhCase.hasSplit === false, 'hasSplit=' + zhCase.hasSplit);
+
+    // 对照：真韩文页面必须仍然被判成韩语并弹提示条，确认没有把韩语误伤
+    const koUrl = 'http://127.0.0.1:' + PORT + '/korean';
+    await cdp.navigate(sessionId, 'about:blank');
+    await sleep(400);
+    await cdp.navigate(sessionId, koUrl);
+    await sleep(3000);
+
+    const koCase = await cdp.evaluate(sessionId, [
+      'new Promise((resolve) => {',
+      '  chrome.runtime.sendMessage({ type: "TAB_ACTION", action: "DETECT_AGAIN" }, (resp) => {',
+      '    const d = (resp && resp.result && resp.result.detection) || {};',
+      '    setTimeout(() => resolve({',
+      '      code: d.code, name: d.name, declared: d.declared,',
+      '      han: d.hanCount, hangul: d.hangulCount,',
+      '      hasBanner: !!document.querySelector(".st-banner")',
+      '    }), 1500);',
+      '  });',
+      '})'
+    ].join('\n'));
+
+    check('对照页（真韩文）仍被判成韩语', koCase.code === 'ko',
+      'code=' + koCase.code + ' han=' + koCase.han + ' hangul=' + koCase.hangul);
+    check('对照页（真韩文）依然会弹出翻译提示条', koCase.hasBanner === true,
+      'hasBanner=' + koCase.hasBanner);
 
     /* ============================================================ */
     console.log('\n[11] 运行期无未捕获异常');

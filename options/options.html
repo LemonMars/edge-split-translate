@@ -129,6 +129,22 @@
       </div>
 
       <div class="field">
+        <label for="languageDetect">语言识别方式</label>
+        <select id="languageDetect">
+          <option value="local">只用本地统计（默认，零成本零延迟）</option>
+          <option value="local-api">本地统计 + AI 兜底（推荐给多语言站点）</option>
+          <option value="api">总是用 AI 识别（最准，每次访问多一次请求）</option>
+        </select>
+        <span class="hint">
+          本地统计会先遍历<strong>整页所有可提取文字</strong>，按汉字 / 假名 / 谚文 / 拉丁等文字系统的
+          占比判断主要语言，再与网页声明的 <code>&lt;html lang&gt;</code> 交叉验证。<br>
+          多语言站点（页头语言/地区选择器里混了别国文字）容易误判时，选
+          <strong>本地统计 + AI 兜底</strong>：只有本地判不准、或统计结果与网页声明冲突时，
+          才额外发一次请求让模型确认；正常情况下不产生任何额外开销。
+        </span>
+      </div>
+
+      <div class="field">
         <label for="excludeList">排除名单（每行一个关键词，命中 URL 即跳过）</label>
         <textarea id="excludeList" rows="4" spellcheck="false"></textarea>
       </div>

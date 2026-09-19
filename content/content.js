@@ -1837,18 +1837,75 @@
   /* 9. 语言检测与自动触发                                               */
   /* ================================================================== */
 
+  /**
+   * 页面语言检测。
+   *
+   * 流程（按用户要求实现）：
+   *   1) 先抽取页面上「所有能直接提取的文字」（整页遍历，不再是前 4000 字符的采样），
+   *      统计汉字 / 假名 / 谚文 / 拉丁等文字系统的占比；
+   *   2) 用「谁占主导」而不是「有没有达到阈值」判断语言；
+   *   3) 网页声明（<html lang> 等）与整页统计一致时，直接采信声明；
+   *   4) 仍不确定（置信度低、或声明与统计冲突）且用户允许时，调用 AI 接口兜底识别。
+   *
+   * @param {boolean} [force]
+   * @returns {Promise<object>}
+   */
   function runDetection(force) {
+    var s = state.settings || {};
     var det = Lang.detectDocument(document);
-    // 网页已声明简体中文时，直接信任声明
-    if (!force && det.declared === 'zh_Hans' && det.confidence < 0.6) {
-      det.code = 'zh_Hans';
-      det.name = '简体中文';
-      det.isChinese = true;
-      det.isSimplifiedChinese = true;
+
+    /* ---- 第 3 步：声明与统计一致，采信声明 ---- */
+    if (!force && det.declared && det.declarationAgrees) {
+      det = Lang.declaredResult(det);
+      det.sampleChars = det.sampleChars;
+      finished(det);
+      return Promise.resolve(det);
     }
-    state.detection = det;
-    reportState();
-    return Promise.resolve(det);
+
+    /* ---- 第 4 步：判不准时用 API 兜底 ---- */
+    var mode = s.languageDetect || 'local';
+    var lowConfidence = det.confidence < (s.minConfidence || 0.5);
+    var conflicted = !!(det.declared && !det.declarationAgrees);
+    var needApi = mode === 'api' || (mode === 'local-api' && (lowConfidence || conflicted));
+
+    if (!force && needApi && s.apiKey) {
+      log('语言检测不确定（' + det.code + ' ' + det.confidence.toFixed(2) +
+        '，页面声明 ' + (det.declared || '无') + '），改用 AI 识别兜底');
+      var sample = Lang.collectPageText(document).text;
+      return Engine.detectLanguageViaApi(sample, s).then(function (r) {
+        if (r && r.code) {
+          det.code = r.code;
+          det.name = Lang.LANG_NAME[r.code] || r.code;
+          det.isChinese = r.code === 'zh_Hans' || r.code === 'zh_Hant';
+          det.isSimplifiedChinese = r.code === 'zh_Hans';
+          det.confidence = 0.92;
+          det.source = 'api';
+          det.apiRaw = r.raw;
+          det.script = '';
+          log('AI 识别结果：' + r.code + '（原始返回："' + r.raw + '"）');
+        } else {
+          det.source = 'local';
+        }
+        return finished(det);
+      });
+    }
+
+    det.source = det.source || 'local';
+    return Promise.resolve(finished(det));
+
+    function finished(d) {
+      // 记录判定依据，便于 popup / 日志排查
+      d.hanCount = d.hanCount || 0;
+      d.hangulCount = d.hangulCount || 0;
+      d.kanaCount = d.kanaCount || 0;
+      state.detection = d;
+      reportState();
+      log('语言检测：' + d.name + '（' + d.code + '，置信度 ' + d.confidence.toFixed(2) +
+        '，来源 ' + (d.source || (d.fromDeclaration ? '声明' : '统计')) +
+        '，汉字 ' + d.hanCount + ' / 谚文 ' + d.hangulCount + ' / 假名 ' + d.kanaCount +
+        '，采样 ' + (d.sampleChars || 0) + ' 字）');
+      return d;
+    }
   }
 
   function maybeAutoActivate() {
