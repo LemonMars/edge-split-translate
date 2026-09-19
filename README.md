@@ -123,7 +123,10 @@ node tools/self-test.js          # 期望：140 项通过，0 项失败
 # 2) 真实浏览器端到端：无头 Edge + CDP，法文页面 → 提示条 → 分屏 → 翻译 → 交互
 node tests/e2e.js                # 期望：131 项通过，0 项失败
 
-# 3) 重新生成图标（改过 icons/icon128.svg 之后）
+# 3) 发布前隐私自查：密钥、本机路径、真实邮箱、.env 等
+node tools/audit-privacy.js      # 期望：0 个问题，0 个注意项
+
+# 4) 重新生成图标（改过 icons/icon128.svg 之后）
 node tools/make-icons.js
 node tools/verify-icons.js       # 期望：全部图标校验通过
 ```
